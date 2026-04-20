@@ -3,84 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atomic Spectrum Visualizer</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        canvas { 
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+    <title>Atomic Spectrum</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <h1>Atomic Spectrum Visualizer</h1>
-    <label for="atomic-number">Select Atomic Number (1-92):</label>
-    <input type="number" id="atomic-number" min="1" max="92" value="1" />
-    <canvas id="spectrum-chart"></canvas>
-    <div id="spectral-lines"></div>
+    <h1>Atomic Spectral Lines</h1>
+    <div id="plot"></div>
     <script>
-        const spectralData = {
-            // Add your calculation for wavelengths and intensities for all series
-            // Example data structure:
-            // 1: { wavelengths: [121.6, 656.3, ...], intensities: [100, 80, ...] },
+        // Data for atomic spectral lines
+        const spectralLines = [
+            { wavelength: 656.28, label: "H-alpha" },
+            { wavelength: 486.13, label: "H-beta" },
+            { wavelength: 434.05, label: "H-gamma" },
+            { wavelength: 410.17, label: "H-delta" },
+            { wavelength: 397.0, label: "Balmer series" },
+            { wavelength: 121.56, label: "Lyman-alpha" },
+            { wavelength: 102.57, label: "Lyman-beta" },
+            { wavelength: 97.25, label: "Lyman-gamma" }
+            // Add more lines as necessary
+        ];
+
+        const wavelengths = spectralLines.map(line => line.wavelength);
+        const labels = spectralLines.map(line => line.label);
+
+        const trace = {
+            x: wavelengths,
+            y: Array(wavelengths.length).fill(1),  // Just for visibility
+            text: labels,
+            mode: 'markers',
+            type: 'scatter'
         };
 
-        function calculateSpectralLines(atomicNumber) {
-            // Logic to calculate all spectral lines for the selected atomic number
-            return spectralData[atomicNumber] || { wavelengths: [], intensities: [] };
-        }
+        const layout = {
+            title: 'Atomic Spectral Lines',
+            xaxis: { title: 'Wavelength (nm)' },
+            yaxis: { title: 'Intensity', showgrid: false, zeroline: false, showline: false }
+        };
 
-        function visualizeSpectrum() {
-            const atomicNumber = document.getElementById('atomic-number').value;
-            const { wavelengths, intensities } = calculateSpectralLines(atomicNumber);
-
-            const ctx = document.getElementById('spectrum-chart').getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: wavelengths,
-                    datasets: [{
-                        label: 'Emission Lines',
-                        data: intensities,
-                        borderColor: 'rgba(0, 123, 255, 1)',
-                        fill: false,
-                        showLine: true,
-                    }]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Wavelength (nm)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Intensity'
-                            }
-                        }
-                    }
-                }
-            });
-            displaySpectralLineList(atomicNumber);
-        }
-
-        function displaySpectralLineList(atomicNumber) {
-            // Display the list of spectral lines below the chart
-            const lines = calculateSpectralLines(atomicNumber);
-            const listContainer = document.getElementById('spectral-lines');
-            listContainer.innerHTML = '';
-            lines.wavelengths.forEach((wavelength, index) => {
-                const intensity = lines.intensities[index];
-                listContainer.innerHTML += `<p>Wavelength: ${wavelength} nm, Intensity: ${intensity}</p>`;
-            });
-        }
-
-        document.getElementById('atomic-number').addEventListener('input', visualizeSpectrum);
-        visualizeSpectrum(); // Initial call
+        Plotly.newPlot('plot', [trace], layout);
     </script>
 </body>
 </html>
