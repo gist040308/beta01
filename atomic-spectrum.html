@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Spectra Visualization</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        canvas { border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <h1>Atomic Spectra Visualization using Rydberg Formula</h1>
+    <p>Select an element to see its spectral lines.</p>
+    <select id="element-select">
+        <option value="1">Hydrogen</option>
+        <option value="2">Helium</option>
+        <option value="3">Lithium</option>
+        <option value="4">Beryllium</option>
+        <option value="5">Boron</option>
+        <option value="6">Carbon</option>
+        <option value="7">Nitrogen</option>
+        <option value="8">Oxygen</option>
+        <option value="9">Fluorine</option>
+        <option value="10">Neon</option>
+        <option value="11">Sodium</option>
+        <option value="12">Magnesium</option>
+        <option value="13">Aluminum</option>
+        <option value="14">Silicon</option>
+        <option value="15">Phosphorus</option>
+        <option value="16">Sulfur</option>
+        <option value="17">Chlorine</option>
+        <option value="18">Argon</option>
+        <option value="19">Potassium</option>
+        <option value="20">Calcium</option>
+    </select>
+    <canvas id="spectra-canvas" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('spectra-canvas');
+        const ctx = canvas.getContext('2d');
+        const elementSelect = document.getElementById('element-select');
 
+        const rydbergConstant = 1.097373e7; // m^-1
+        const wavelengthRange = [100, 1000]; // nm
+
+        const spectraData = {
+            1: [{n1: 2, n2: 1}],
+            2: [], // Example, add more data for each element
+            3: [],
+            4: [],
+            5: [],
+            6: [],
+            7: [],
+            8: [],
+            9: [],
+            10: [],
+            11: [],
+            12: [],
+            13: [],
+            14: [],
+            15: [],
+            16: [],
+            17: [],
+            18: [],
+            19: [],
+            20: []
+        };
+
+        elementSelect.addEventListener('change', drawSpectrum);
+
+        function drawSpectrum() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const selectedElement = elementSelect.value;
+            const transitions = spectraData[selectedElement];
+
+            transitions.forEach(transition => {
+                const wavelength = calculateWavelength(transition.n1, transition.n2);
+                const x = mapWavelengthToCanvas(wavelength);
+                ctx.fillStyle = getColorFromWavelength(wavelength);
+                ctx.fillRect(x, canvas.height / 2 - 5, 2, 10);
+            });
+        }
+
+        function calculateWavelength(n1, n2) {
+            return 1 / (rydbergConstant * (1 / Math.pow(n1, 2) - 1 / Math.pow(n2, 2))) * 1e9; // Convert to nm
+        }
+
+        function mapWavelengthToCanvas(wavelength) {
+            const [min, max] = wavelengthRange;
+            return ((wavelength - min) / (max - min)) * canvas.width;
+        }
+
+        function getColorFromWavelength(wavelength) {
+            // Simple mapping based on wavelength (for demonstration)
+            if (wavelength < 380) return 'violet';
+            if (wavelength < 450) return 'blue';
+            if (wavelength < 495) return 'cyan';
+            if (wavelength < 570) return 'green';
+            if (wavelength < 590) return 'yellow';
+            if (wavelength < 620) return 'orange';
+            if (wavelength < 750) return 'red';
+            return 'black';
+        }
+
+        drawSpectrum();
+    </script>
+</body>
+</html>
