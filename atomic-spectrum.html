@@ -1,542 +1,86 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原子光谱可视化 - 里德伯公式</title>
+    <title>Atomic Spectrum Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 30px;
-            max-width: 1200px;
-            width: 100%;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #333;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-        .header p {
-            color: #666;
-            font-size: 0.95em;
-        }
-        .formula {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-family: 'Courier New', monospace;
-            color: #333;
-            text-align: center;
-            font-size: 0.9em;
-        }
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        label {
-            font-weight: 600;
-            color: #333;
-            min-width: 80px;
-        }
-        input[type="number"],
-        select {
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-        input[type="number"]:focus,
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .canvas-container {
-            background: #f9f9f9;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: center;
-        }
-        canvas {
-            max-width: 100%;
-            border-radius: 4px;
-        }
-        .info-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .info-card {
-            background: #f0f4ff;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        .info-card h3 {
-            color: #667eea;
-            font-size: 0.9em;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .info-card p {
-            color: #333;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-        .spectral-lines {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .spectral-lines h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-        .line-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #f9f9f9;
-            border-radius: 6px;
-            border-left: 4px solid;
-        }
-        .line-color {
-            width: 25px;
-            height: 25px;
-            border-radius: 4px;
-            margin-right: 12px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        .line-info {
-            flex: 1;
-        }
-        .line-info p {
-            margin: 3px 0;
-            font-size: 0.85em;
-        }
-        .line-transition {
-            color: #666;
-            font-weight: 600;
-        }
-        .line-wavelength {
-            color: #999;
-            font-size: 0.8em;
-        }
-        .element-name {
-            color: #667eea;
-            font-weight: 600;
-        }
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        input[type="range"] {
-            flex: 1;
-            min-width: 100px;
-        }
-        .range-value {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 600;
-            color: #667eea;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            .header h1 {
-                font-size: 1.5em;
-            }
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .control-group {
-                flex-direction: column;
-            }
-            input[type="number"],
-            select,
-            button {
-                width: 100%;
-            }
+        body { font-family: Arial, sans-serif; }
+        canvas { 
+            display: block;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚛️ 原子光谱可视化</h1>
-            <p>基于里德伯公式的实时光谱计算与展示</p>
-            <div class="formula">
-                1/λ = R∞ × Z² × (1/n₁² - 1/n₂²) | R∞ = 1.097×10⁷ m⁻¹
-            </div>
-        </div>
-        <div class="controls">
-            <div class="control-group slider-group">
-                <label for="atomicNumber">原子序数 (Z):</label>
-                <input type="range" id="atomicNumber" min="1" max="20" value="1">
-                <span class="range-value" id="atomicValue">1</span>
-            </div>
-            <div class="control-group">
-                <label for="series">能级系列:</label>
-                <select id="series">
-                    <option value="lyman">Lyman (n₁=1)</option>
-                    <option value="balmer" selected>Balmer (n₁=2)</option>
-                    <option value="paschen">Paschen (n₁=3)</option>
-                    <option value="brackett">Brackett (n₁=4)</option>
-                    <option value="pfund">Pfund (n₁=5)</option>
-                </select>
-            </div>
-            <button onclick="updateSpectrum()">更新光谱</button>
-            <button onclick="resetView()">重置</button>
-        </div>
-        <div class="info-panel">
-            <div class="info-card">
-                <h3>元素</h3>
-                <p id="elementName">氢 (H)</p>
-            </div>
-            <div class="info-card">
-                <h3>原子序数</h3>
-                <p id="zValue">Z = 1</p>
-            </div>
-            <div class="info-card">
-                <h3>可见光谱线</h3>
-                <p id="visibleCount">加载中...</p>
-            </div>
-            <div class="info-card">
-                <h3>波长范围</h3>
-                <p id="wavelengthRange">加载中...</p>
-            </div>
-        </div>
-        <div class="canvas-container">
-            <canvas id="spectrumCanvas" width="1000" height="400"></canvas>
-        </div>
-        <div class="spectral-lines" id="spectralLines">
-            <h3>谱线详情</h3>
-            <p style="color: #999;">选择参数后生成...</p>
-        </div>
-    </div>
+    <h1>Atomic Spectrum Visualizer</h1>
+    <label for="atomic-number">Select Atomic Number (1-92):</label>
+    <input type="number" id="atomic-number" min="1" max="92" value="1" />
+    <canvas id="spectrum-chart"></canvas>
+    <div id="spectral-lines"></div>
     <script>
-        // 元素周期表数据
-        const elements = [
-            { z: 1, name: 'H', fullName: '氢' },
-            { z: 2, name: 'He', fullName: '氦' },
-            { z: 3, name: 'Li', fullName: '锂' },
-            { z: 4, name: 'Be', fullName: '铍' },
-            { z: 5, name: 'B', fullName: '硼' },
-            { z: 6, name: 'C', fullName: '碳' },
-            { z: 7, name: 'N', fullName: '氮' },
-            { z: 8, name: 'O', fullName: '氧' },
-            { z: 9, name: 'F', fullName: '氟' },
-            { z: 10, name: 'Ne', fullName: '氖' },
-            { z: 11, name: 'Na', fullName: '钠' },
-            { z: 12, name: 'Mg', fullName: '镁' },
-            { z: 13, name: 'Al', fullName: '铝' },
-            { z: 14, name: 'Si', fullName: '硅' },
-            { z: 15, name: 'P', fullName: '磷' },
-            { z: 16, name: 'S', fullName: '硫' },
-            { z: 17, name: 'Cl', fullName: '氯' },
-            { z: 18, name: 'Ar', fullName: '氩' },
-            { z: 19, name: 'K', fullName: '钾' },
-            { z: 20, name: 'Ca', fullName: '钙' }
-        ];
-        // 常数定义
-        const RYDBERG_CONSTANT = 1.097e7; // m⁻¹
-        const h = 6.626e-34; // 普朗克常数
-        const c = 3e8; // 光速
-        // 能级系列配置
-        const seriesConfig = {
-            lyman: { n1: 1, maxN: 12, name: 'Lyman' },
-            balmer: { n1: 2, maxN: 12, name: 'Balmer' },
-            paschen: { n1: 3, maxN: 12, name: 'Paschen' },
-            brackett: { n1: 4, maxN: 12, name: 'Brackett' },
-            pfund: { n1: 5, maxN: 12, name: 'Pfund' }
+        const spectralData = {
+            // Add your calculation for wavelengths and intensities for all series
+            // Example data structure:
+            // 1: { wavelengths: [121.6, 656.3, ...], intensities: [100, 80, ...] },
         };
-        // 波长到RGB颜色的转换
-        function wavelengthToRGB(wavelength) {
-            let r, g, b, alpha = 1.0;
-            if (wavelength < 380 || wavelength > 750) {
-                alpha = 0.3;
-            }
-            if (wavelength >= 380 && wavelength < 440) {
-                r = -(wavelength - 440) / (440 - 380);
-                g = 0.0;
-                b = 1.0;
-            } else if (wavelength >= 440 && wavelength < 490) {
-                r = 0.0;
-                g = (wavelength - 440) / (490 - 440);
-                b = 1.0;
-            } else if (wavelength >= 490 && wavelength < 510) {
-                r = 0.0;
-                g = 1.0;
-                b = -(wavelength - 510) / (510 - 490);
-            } else if (wavelength >= 510 && wavelength < 580) {
-                r = (wavelength - 510) / (580 - 510);
-                g = 1.0;
-                b = 0.0;
-            } else if (wavelength >= 580 && wavelength < 645) {
-                r = 1.0;
-                g = -(wavelength - 645) / (645 - 580);
-                b = 0.0;
-            } else if (wavelength >= 645 && wavelength <= 750) {
-                r = 1.0;
-                g = 0.0;
-                b = 0.0;
-            }
-            // 亮度调整
-            if (wavelength < 380 || wavelength > 700) {
-                alpha *= 0.3;
-            } else if (wavelength < 420 || wavelength > 700) {
-                alpha *= 0.5;
-            }
-            r = Math.pow(r * alpha, 0.8) * 255;
-            g = Math.pow(g * alpha, 0.8) * 255;
-            b = Math.pow(b * alpha, 0.8) * 255;
-            return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+
+        function calculateSpectralLines(atomicNumber) {
+            // Logic to calculate all spectral lines for the selected atomic number
+            return spectralData[atomicNumber] || { wavelengths: [], intensities: [] };
         }
-        // 计算光谱线（使用里德伯公式）
-        function calculateSpectralLines(z, seriesType) {
-            const config = seriesConfig[seriesType];
-            const lines = [];
-            for (let n2 = config.n1 + 1; n2 <= config.maxN; n2++) {
-                const inverseWavelength = RYDBERG_CONSTANT * z * z * 
-                    (1 / (config.n1 * config.n1) - 1 / (n2 * n2));
-                const wavelength = 1 / inverseWavelength * 1e9; // 转换为纳米
-                // 只显示紫外到红外范围内的谱线
-                if (wavelength > 0 && wavelength < 2000) {
-                    const frequency = c / (wavelength * 1e-9);
-                    const energy = h * frequency / 1.602e-19; // eV
-                    lines.push({
-                        n1: config.n1,
-                        n2: n2,
-                        wavelength: wavelength,
-                        energy: energy,
-                        color: wavelengthToRGB(wavelength),
-                        intensity: 1 / (n2 - config.n1) // 强度与跃迁差成反比
-                    });
+
+        function visualizeSpectrum() {
+            const atomicNumber = document.getElementById('atomic-number').value;
+            const { wavelengths, intensities } = calculateSpectralLines(atomicNumber);
+
+            const ctx = document.getElementById('spectrum-chart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: wavelengths,
+                    datasets: [{
+                        label: 'Emission Lines',
+                        data: intensities,
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        fill: false,
+                        showLine: true,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Wavelength (nm)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Intensity'
+                            }
+                        }
+                    }
                 }
-            }
-            return lines.sort((a, b) => a.wavelength - b.wavelength);
-        }
-        // 绘制光谱图
-        function drawSpectrum(canvas, lines) {
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-            // 清空画布
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, width, height);
-            if (lines.length === 0) {
-                ctx.fillStyle = '#999';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('没有有效的谱线数据', width / 2, height / 2);
-                return;
-            }
-            // 计算波长范围
-            const minWavelength = Math.min(...lines.map(l => l.wavelength));
-            const maxWavelength = Math.max(...lines.map(l => l.wavelength));
-            const maxIntensity = Math.max(...lines.map(l => l.intensity));
-            const padding = 50;
-            const graphWidth = width - 2 * padding;
-            const graphHeight = height - 2 * padding;
-            // 绘制坐标轴
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(padding, height - padding);
-            ctx.lineTo(width - padding, height - padding);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(padding, padding);
-            ctx.lineTo(padding, height - padding);
-            ctx.stroke();
-            // 绘制坐标轴标签
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('波长 (nm)', width / 2, height - 10);
-            ctx.save();
-            ctx.translate(15, height / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.textAlign = 'center';
-            ctx.fillText('强度 (相对)', 0, 0);
-            ctx.restore();
-            // 绘制刻度和网格
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 1;
-            ctx.fillStyle = '#666';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            const tickCount = 5;
-            for (let i = 0; i <= tickCount; i++) {
-                const ratio = i / tickCount;
-                const x = padding + graphWidth * ratio;
-                const wavelength = minWavelength + (maxWavelength - minWavelength) * ratio;
-                // 竖网格线
-                ctx.beginPath();
-                ctx.moveTo(x, padding);
-                ctx.lineTo(x, height - padding);
-                ctx.stroke();
-                // 波长标签
-                ctx.fillText(Math.round(wavelength) + ' nm', x, height - padding + 20);
-            }
-            // 绘制条形图
-            const barWidth = graphWidth / lines.length;
-            const barSpacing = barWidth * 0.8;
-            const barActualWidth = Math.max(2, barSpacing - 2);
-            lines.forEach((line, index) => {
-                const ratio = (line.wavelength - minWavelength) / (maxWavelength - minWavelength);
-                const x = padding + graphWidth * ratio;
-                const barHeight = (line.intensity / maxIntensity) * graphHeight * 0.85;
-                const y = height - padding - barHeight;
-                // 绘制条形
-                ctx.fillStyle = line.color;
-                ctx.globalAlpha = 0.85;
-                ctx.fillRect(x - barActualWidth / 2, y, barActualWidth, barHeight);
-                ctx.globalAlpha = 1.0;
-                // 绘制边框
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(x - barActualWidth / 2, y, barActualWidth, barHeight);
             });
-            // 绘制图例
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(width - 200, 10, 190, 80);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText('紫外线: < 380 nm', width - 190, 28);
-            ctx.fillText('可见光: 380-750 nm', width - 190, 45);
-            ctx.fillText('红外线: > 750 nm', width - 190, 62);
-            ctx.fillText(`总谱线: ${lines.length}`, width - 190, 79);
+            displaySpectralLineList(atomicNumber);
         }
-        // 更新谱线详情列表
-        function updateLinesList(lines) {
-            const container = document.getElementById('spectralLines');
-            if (lines.length === 0) {
-                container.innerHTML = '<h3>谱线详情</h3><p style="color: #999;">没有可显示的谱线</p>';
-                return;
-            }
-            let html = '<h3>谱线详情</h3>';
-            // 只显示前15条
-            lines.slice(0, 15).forEach(line => {
-                let region = '红外线';
-                if (line.wavelength < 380) region = '紫外线';
-                else if (line.wavelength <= 750) region = '可见光';
-                html += `
-                    <div class="line-item" style="border-left-color: ${line.color}">
-                        <div class="line-color" style="background: ${line.color}"></div>
-                        <div class="line-info">
-                            <p class="line-transition">n: ${line.n1} → ${line.n2}</p>
-                            <p class="line-wavelength">λ = ${line.wavelength.toFixed(2)} nm | E = ${line.energy.toFixed(2)} eV | ${region}</p>
-                        </div>
-                    </div>
-                `;
+
+        function displaySpectralLineList(atomicNumber) {
+            // Display the list of spectral lines below the chart
+            const lines = calculateSpectralLines(atomicNumber);
+            const listContainer = document.getElementById('spectral-lines');
+            listContainer.innerHTML = '';
+            lines.wavelengths.forEach((wavelength, index) => {
+                const intensity = lines.intensities[index];
+                listContainer.innerHTML += `<p>Wavelength: ${wavelength} nm, Intensity: ${intensity}</p>`;
             });
-            if (lines.length > 15) {
-                html += `<p style="color: #999; text-align: center; margin-top: 10px;">... 还有 ${lines.length - 15} 条谱线</p>`;
-            }
-            container.innerHTML = html;
         }
-        // 主更新函数
-        function updateSpectrum() {
-            const z = parseInt(document.getElementById('atomicNumber').value);
-            const seriesType = document.getElementById('series').value;
-            // 更新元素信息
-            const element = elements.find(e => e.z === z);
-            document.getElementById('elementName').textContent = `${element.fullName} (${element.name})`;
-            document.getElementById('zValue').textContent = `Z = ${z}`;
-            document.getElementById('atomicValue').textContent = z;
-            // 计算谱线
-            const lines = calculateSpectralLines(z, seriesType);
-            // 统计可见光谱线
-            const visibleLines = lines.filter(l => l.wavelength >= 380 && l.wavelength <= 750);
-            document.getElementById('visibleCount').textContent = visibleLines.length;
-            // 更新波长范围
-            if (lines.length > 0) {
-                const minW = Math.min(...lines.map(l => l.wavelength)).toFixed(1);
-                const maxW = Math.max(...lines.map(l => l.wavelength)).toFixed(1);
-                document.getElementById('wavelengthRange').textContent = `${minW} - ${maxW} nm`;
-            }
-            // 绘制光谱
-            const canvas = document.getElementById('spectrumCanvas');
-            drawSpectrum(canvas, lines);
-            // 更新谱线列表
-            updateLinesList(lines);
-        }
-        // 重置视图
-        function resetView() {
-            document.getElementById('atomicNumber').value = 1;
-            document.getElementById('series').value = 'balmer';
-            document.getElementById('atomicValue').textContent = '1';
-            updateSpectrum();
-        }
-        // 初始化
-        document.getElementById('atomicNumber').addEventListener('input', function() {
-            document.getElementById('atomicValue').textContent = this.value;
-            updateSpectrum();
-        });
-        document.getElementById('series').addEventListener('change', updateSpectrum);
-        // 初始加载
-        updateSpectrum();
+
+        document.getElementById('atomic-number').addEventListener('input', visualizeSpectrum);
+        visualizeSpectrum(); // Initial call
     </script>
 </body>
 </html>
